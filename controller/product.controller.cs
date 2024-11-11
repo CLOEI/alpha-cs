@@ -36,7 +36,8 @@ namespace N_tier.controller
         {
             try
             {
-                conn.Execute("INSERT INTO products (name, description, price) VALUES (@Name, @Description, @Price)", new { Name = name, Description = description, Price = price });
+                DateTimeOffset createdAt = DateTimeOffset.UtcNow;
+                conn.Execute("INSERT INTO products (name, description, price, created_at) VALUES (@Name, @Description, @Price, @CreatedAt)", new { Name = name, Description = description, Price = price, CreatedAt = createdAt });
                 MessageBox.Show("Product added successfully");
             }
             catch (Exception e)
@@ -49,7 +50,8 @@ namespace N_tier.controller
         {
             try
             {
-                conn.Execute("UPDATE products SET name = @Name, description = @Description, price = @Price WHERE id = @Id", new { Id = productId, Name = name, Description = description, Price = price });
+                DateTimeOffset updatedAt = DateTimeOffset.UtcNow;
+                conn.Execute("UPDATE products SET name = @Name, description = @Description, price = @Price, updated_at = @UpdatedAt WHERE id = @Id", new { Id = productId, Name = name, Description = description, Price = price, UpdatedAt = updatedAt });
                 MessageBox.Show("Product updated successfully");
             }
             catch (Exception e)

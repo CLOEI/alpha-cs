@@ -3,15 +3,20 @@ using Microsoft.Data.SqlClient;
 
 namespace N_tier.controller
 {
-   public static class User
+    public static class User
     {
         public static models.User? GetUser(SqlConnection conn, int id)
         {
             try
             {
-                var user = conn.Query<models.User>("SELECT * FROM users WHERE id = @Id", new { Id = id });
+                var user = conn.Query<models.User>(
+                    "SELECT * FROM users WHERE id = @Id",
+                    new { Id = id }
+                );
                 return user.FirstOrDefault();
-            } catch (Exception ex) {
+            }
+            catch (Exception ex)
+            {
                 MessageBox.Show("Failed to get user: " + ex.Message);
                 return null;
             }
@@ -19,40 +24,69 @@ namespace N_tier.controller
 
         public static void DeleteUser(SqlConnection conn, int userId)
         {
-            try
+            using (var transaction = conn.BeginTransaction())
             {
-                conn.Execute("DELETE FROM users WHERE id = @Id", new { Id = userId });
-                MessageBox.Show("User deleted successfully");
-            }
-            catch (Exception e)
-            {
-                MessageBox.Show("Failed to delete user: " + e.Message);
+                try
+                {
+                    conn.Execute(
+                        "DELETE FROM users WHERE id = @Id",
+                        new { Id = userId },
+                        transaction: transaction
+                    );
+                    transaction.Commit();
+                    MessageBox.Show("User deleted successfully");
+                }
+                catch (Exception e)
+                {
+                    transaction.Rollback();
+                    MessageBox.Show("Failed to delete user: " + e.Message);
+                }
             }
         }
 
         public static void AddUser(SqlConnection conn, string name, string email, string password)
         {
-            try
+            using (var transaction = conn.BeginTransaction())
             {
-                conn.Execute("INSERT INTO users (name, email, password) VALUES (@Name, @Email, @Password)", new { Name = name, Email = email, Password = password });
-                MessageBox.Show("User added successfully");
-            }
-            catch (Exception e)
-            {
-                MessageBox.Show("Failed to add user: " + e.Message);
+                try
+                {
+                    DateTimeOffset createdAt = DateTimeOffset.UtcNow;
+                    conn.Execute(
+                        "INSERT INTO users (name, email, password, created_at) VALUES (@Name, @Email, @Password, @CreatedAt)",
+                        new { Name = name, Email = email, Password = password, CreatedAt = createdAt },
+                        transaction: transaction
+                    );
+                    transaction.Commit();
+                    MessageBox.Show("User added successfully");
+                }
+                catch (Exception e)
+                {
+                    transaction.Rollback();
+                    MessageBox.Show("Failed to add user: " + e.Message);
+                }
             }
         }
 
         public static void UpdateUser(SqlConnection conn, int userId, string name, string email, string password)
         {
-            try
+            using (var transaction = conn.BeginTransaction())
             {
-                conn.Execute("UPDATE users SET name = @Name, email = @Email, password = @Password WHERE id = @Id", new { Id = userId, Name = name, Email = email, Password = password });
-                MessageBox.Show("User updated successfully");
-            }
-            catch (Exception e)
-            {
-                MessageBox.Show("Failed to update user: " + e.Message);
+                try
+                {
+                    DateTimeOffset updatedAt = DateTimeOffset.UtcNow;
+                    conn.Execute(
+                        "UPDATE users SET name = @Name, email = @Email, password = @Password, updated_at = @UpdatedAt WHERE id = @Id",
+                        new { Id = userId, Name = name, Email = email, Password = password , updatedAt = updatedAt},
+                        transaction: transaction
+                    );
+                    transaction.Commit();
+                    MessageBox.Show("User updated successfully");
+                }
+                catch (Exception e)
+                {
+                    transaction.Rollback();
+                    MessageBox.Show("Failed to update user: " + e.Message);
+                }
             }
         }
 
